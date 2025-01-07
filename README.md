@@ -40,33 +40,30 @@ let package = Package(
     ]
 )
 ```
-## Usage
-```
-import Swiflow
+# Usage
 
+### Step 1: Import the Library
+
+```swift
+import Swiflow
+```
+### Step 2: Prepare Your Data
+Define an array of items you want to display:
+```
 let items = [
     "Swift", "Xcode", "Apple Intelligence", "Combine",
     "CreateML", "SwiftTesting", "Vision", "RealityKit",
     "SwiftUI", "SwiftData"
 ]
-
+```
+### Step 3: Use Swiflow in Your View
+Use FlowItem or create your own custom view to display the items:
+```
 Swiflow(items) { item in
     FlowItem(text: item)
 }
-
-struct FlowItem: View {
-    let text: String
-    
-    var body: some View {
-        Text(text)
-            .padding(6)
-            .font(.callout)
-            .padding(.horizontal, 3)
-            .background(.background)
-            .clipShape(RoundedRectangle(cornerRadius: 5))
-    }
-}
 ```
+
 ## License
 
 This library is released under the MIT License. Feel free to use it in your own projects. Contributions are welcome!
