@@ -42,29 +42,16 @@ let package = Package(
 ```
 ## Usage
 ```
-import SwiftUI
 import Swiflow
 
-struct ContentView: View {
-    let items = [
-        "Swift", "Xcode", "Apple Intelligence", "Combine",
-        "CreateML", "SwiftTesting", "Vision", "RealityKit",
-        "SwiftUI", "SwiftData"
-    ]
-    
-    var body: some View {
-        Swiflow(items) { item in
-            FlowItem(text: item)
-        }
-        .padding(10)
-        .background(.secondary.opacity(0.1),
-                    in: RoundedRectangle(cornerRadius: 10,
-                                         style: .continuous)
-                        .stroke(lineWidth: 4))
-        .padding(.horizontal, 20)
-        .frame(maxHeight: .infinity)
-        .background(Color(uiColor: .systemGroupedBackground))
-    }
+let items = [
+    "Swift", "Xcode", "Apple Intelligence", "Combine",
+    "CreateML", "SwiftTesting", "Vision", "RealityKit",
+    "SwiftUI", "SwiftData"
+]
+
+Swiflow(items) { item in
+    FlowItem(text: item)
 }
 
 struct FlowItem: View {
