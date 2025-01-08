@@ -13,6 +13,10 @@ A SwiftUI flow layout for wrapping views dynamically, designed to make it easy t
 - Compatible with SwiftUI's `ViewBuilder`.
 - Supports dynamic content sizes using SwiftUI’s preference system.
 
+<p align="center">
+  <img src="SampleImage.png" alt="SampleImage" width="300">
+</p>
+
 ## Installation
 
 ### Swift Package Manager
