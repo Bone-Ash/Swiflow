@@ -1,12 +1,28 @@
 import SwiftUI
 
+/// A flow layout container that arranges items in multiple rows.
 public struct Swiflow<Data: RandomAccessCollection, Content: View>: View where Data.Element: Hashable {
+    // MARK: - Properties
+    
+    /// The collection of items to display.
     public let items: Data
+    
+    /// Horizontal and vertical spacing between items.
     public let spacing: CGFloat
+    
+    /// A closure that creates the view for a single item.
     public let content: (Data.Element) -> Content
     
+    /// Tracks the size of each element for layout calculations.
     @State private var elementsSize: [Int: CGSize] = [:]
     
+    // MARK: - Initialization
+    
+    /// Creates a new flow layout with the given items and configuration.
+    /// - Parameters:
+    ///   - items: The collection of items to display.
+    ///   - spacing: The spacing between items (default is 8 points).
+    ///   - content: A closure that creates the view for a single item.
     public init(
         _ items: Data,
         spacing: CGFloat = 8,
@@ -17,16 +33,20 @@ public struct Swiflow<Data: RandomAccessCollection, Content: View>: View where D
         self.content = content
     }
     
+    // MARK: - Body
+    
     public var body: some View {
         var totalWidth = CGFloat.zero
         var rows: [[(index: Int, item: Data.Element)]] = [[]]
         var currentRow = 0
         let itemsArray = Array(items)
+        let screenWidth = UIScreen.main.bounds.width - 32 // Account for padding
         
+        // Calculate rows based on item sizes
         for (index, item) in itemsArray.enumerated() {
             let itemSize = elementsSize[index, default: CGSize(width: 100, height: 100)]
             
-            if totalWidth + itemSize.width + spacing > UIScreen.main.bounds.width - 32 {
+            if totalWidth + itemSize.width + spacing > screenWidth {
                 currentRow += 1
                 rows.append([])
                 totalWidth = 0
@@ -61,36 +81,12 @@ public struct Swiflow<Data: RandomAccessCollection, Content: View>: View where D
         }
     }
     
+    // MARK: - Helper Types
+    
     private struct ItemSizePreferenceKey: PreferenceKey {
         static var defaultValue: [Int: CGSize] { [:] }
         static func reduce(value: inout [Int: CGSize], nextValue: () -> [Int: CGSize]) {
             value.merge(nextValue(), uniquingKeysWith: { $1 })
         }
-    }
-}
-
-#Preview {
-    let items = ["Swift", "Xcode", "Apple Intelligence", "Combine", "CreateML", "SwiftTesting", "Vision", "RealityKit", "SwiftUI", "SwiftData"]
-    
-    Swiflow(items) { item in
-        FlowItem(text: item)
-    }
-    .padding(10)
-    .background(.secondary.opacity(0.1), in: .rect(cornerRadius: 10, style: .continuous).stroke(lineWidth: 4))
-    .padding(.horizontal, 20)
-    .frame(maxHeight: .infinity)
-    .background(Color(uiColor: .systemGroupedBackground))
-}
-
-struct FlowItem: View {
-    let text: String
-    
-    var body: some View {
-        Text(text)
-            .padding(6)
-            .font(.callout)
-            .padding(.horizontal, 3)
-            .background(.background)
-            .clipShape(RoundedRectangle(cornerRadius: 5))
     }
 }

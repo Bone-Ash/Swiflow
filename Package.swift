@@ -12,7 +12,7 @@ let package = Package(
             targets: ["Swiflow"]),
     ],
     targets: [
-        .target(
-            name: "Swiflow"),
+        .target(name: "Swiflow"),
+        .executableTarget(name: "SwiflowExamples", dependencies: ["Swiflow"], path: "Examples")
     ]
 )
