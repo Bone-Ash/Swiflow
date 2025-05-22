@@ -16,6 +16,9 @@ public struct Swiflow<Data: RandomAccessCollection, Content: View>: View where D
     /// Tracks the size of each element for layout calculations.
     @State private var elementsSize: [Int: CGSize] = [:]
     
+    /// Container width
+    @State private var containerWidth: CGFloat = 0
+    
     // MARK: - Initialization
     
     /// Creates a new flow layout with the given items and configuration.
@@ -36,30 +39,27 @@ public struct Swiflow<Data: RandomAccessCollection, Content: View>: View where D
     // MARK: - Body
     
     public var body: some View {
-        var totalWidth = CGFloat.zero
-        var rows: [[(index: Int, item: Data.Element)]] = [[]]
-        var currentRow = 0
-        let itemsArray = Array(items)
-        let screenWidth = UIScreen.main.bounds.width - 32 // Account for padding
-        
-        // Calculate rows based on item sizes
-        for (index, item) in itemsArray.enumerated() {
-            let itemSize = elementsSize[index, default: CGSize(width: 100, height: 100)]
-            
-            if totalWidth + itemSize.width + spacing > screenWidth {
-                currentRow += 1
-                rows.append([])
-                totalWidth = 0
-            }
-            
-            rows[currentRow].append((index, item))
-            totalWidth += itemSize.width + spacing
+        GeometryReader { geometry in
+            calculateLayout(in: geometry)
+                .onAppear {
+                    containerWidth = geometry.size.width
+                }
+                .onChange(of: geometry.size.width) { newWidth in
+                    containerWidth = newWidth
+                }
         }
+    }
+    
+    @ViewBuilder
+    private func calculateLayout(in geometry: GeometryProxy) -> some View {
+        let availableWidth = geometry.size.width - 32 // Account for padding
         
-        return VStack(alignment: .leading, spacing: spacing) {
-            ForEach(0..<rows.count, id: \.self) { rowIndex in
+        let layout = computeRows(availableWidth: availableWidth)
+        
+        VStack(alignment: .leading, spacing: spacing) {
+            ForEach(0..<layout.count, id: \.self) { rowIndex in
                 HStack(spacing: spacing) {
-                    ForEach(rows[rowIndex], id: \.index) { tuple in
+                    ForEach(layout[rowIndex], id: \.index) { tuple in
                         content(tuple.item)
                             .fixedSize()
                             .background(
@@ -70,15 +70,38 @@ public struct Swiflow<Data: RandomAccessCollection, Content: View>: View where D
                                 }
                             )
                     }
-                    Spacer()
+                    Spacer(minLength: 0)
                 }
             }
         }
         .onPreferenceChange(ItemSizePreferenceKey.self) { sizes in
-            Task { @MainActor in
-                self.elementsSize = sizes
-            }
+            elementsSize = sizes
         }
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func computeRows(availableWidth: CGFloat) -> [[(index: Int, item: Data.Element)]] {
+        var totalWidth = CGFloat.zero
+        var rows: [[(index: Int, item: Data.Element)]] = [[]]
+        var currentRow = 0
+        let itemsArray = Array(items)
+        
+        // Calculate rows based on item sizes
+        for (index, item) in itemsArray.enumerated() {
+            let itemSize = elementsSize[index, default: CGSize(width: 100, height: 100)]
+            
+            if totalWidth + itemSize.width + spacing > availableWidth && totalWidth > 0 {
+                currentRow += 1
+                rows.append([])
+                totalWidth = 0
+            }
+            
+            rows[currentRow].append((index, item))
+            totalWidth += itemSize.width + (totalWidth > 0 ? spacing : 0)
+        }
+        
+        return rows
     }
     
     // MARK: - Helper Types
