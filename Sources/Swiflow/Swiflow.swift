@@ -39,43 +39,31 @@ public struct Swiflow<Data: RandomAccessCollection, Content: View>: View where D
     // MARK: - Body
     
     public var body: some View {
-        GeometryReader { geometry in
-            calculateLayout(in: geometry)
-                .onAppear {
-                    containerWidth = geometry.size.width
-                }
-                .onChange(of: geometry.size.width) { newWidth in
-                    containerWidth = newWidth
+        ViewThatFits(in: .horizontal) {
+            calculatedContent
+                .geometryGroup()
+                .measureSize { size in
+                    containerWidth = size.width
                 }
         }
     }
     
-    @ViewBuilder
-    private func calculateLayout(in geometry: GeometryProxy) -> some View {
-        let availableWidth = geometry.size.width - 32 // Account for padding
+    private var calculatedContent: some View {
+        let layout = computeRows(availableWidth: containerWidth > 0 ? containerWidth - 32 : 1000)
         
-        let layout = computeRows(availableWidth: availableWidth)
-        
-        VStack(alignment: .leading, spacing: spacing) {
+        return VStack(alignment: .leading, spacing: spacing) {
             ForEach(0..<layout.count, id: \.self) { rowIndex in
                 HStack(spacing: spacing) {
                     ForEach(layout[rowIndex], id: \.index) { tuple in
                         content(tuple.item)
                             .fixedSize()
-                            .background(
-                                GeometryReader { geo in
-                                    Color.clear
-                                        .preference(key: ItemSizePreferenceKey.self,
-                                                    value: [tuple.index: geo.size])
-                                }
-                            )
+                            .measureSize { size in
+                                elementsSize[tuple.index] = size
+                            }
                     }
                     Spacer(minLength: 0)
                 }
             }
-        }
-        .onPreferenceChange(ItemSizePreferenceKey.self) { sizes in
-            elementsSize = sizes
         }
     }
     
@@ -89,7 +77,7 @@ public struct Swiflow<Data: RandomAccessCollection, Content: View>: View where D
         
         // Calculate rows based on item sizes
         for (index, item) in itemsArray.enumerated() {
-            let itemSize = elementsSize[index, default: CGSize(width: 100, height: 100)]
+            let itemSize = elementsSize[index, default: CGSize(width: 100, height: 30)]
             
             if totalWidth + itemSize.width + spacing > availableWidth && totalWidth > 0 {
                 currentRow += 1
@@ -103,13 +91,34 @@ public struct Swiflow<Data: RandomAccessCollection, Content: View>: View where D
         
         return rows
     }
-    
-    // MARK: - Helper Types
-    
-    private struct ItemSizePreferenceKey: PreferenceKey {
-        static var defaultValue: [Int: CGSize] { [:] }
-        static func reduce(value: inout [Int: CGSize], nextValue: () -> [Int: CGSize]) {
-            value.merge(nextValue(), uniquingKeysWith: { $1 })
+}
+
+// Extension to measure view sizes without using GeometryReader
+extension View {
+    func measureSize(perform action: @escaping (CGSize) -> Void) -> some View {
+        self.background(
+            SizeCalculator()
+                .onPreferenceChange(SizePreferenceKey.self, perform: action)
+        )
+    }
+}
+
+// Helper view to calculate size
+private struct SizeCalculator: View {
+    var body: some View {
+        GeometryReader { geometry in
+            Color.clear.preference(
+                key: SizePreferenceKey.self,
+                value: geometry.size
+            )
         }
+    }
+}
+
+// Preference key for size calculations
+private struct SizePreferenceKey: PreferenceKey {
+    static let defaultValue: CGSize = .zero
+    static func reduce(value: inout CGSize, nextValue: () -> CGSize) {
+        value = nextValue()
     }
 }

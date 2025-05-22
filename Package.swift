@@ -4,7 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "Swiflow",
-    platforms: [.iOS(.v15), .visionOS(.v1)],
+    platforms: [.iOS(.v17), .visionOS(.v1)],
     products: [.library(name: "Swiflow", targets: ["Swiflow"])],
     targets: [.target(name: "Swiflow")],
     swiftLanguageModes: [.v6]
