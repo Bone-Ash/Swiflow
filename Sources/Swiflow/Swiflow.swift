@@ -49,7 +49,7 @@ public struct Swiflow<Data: RandomAccessCollection, Content: View>: View where D
     }
     
     private var calculatedContent: some View {
-        let layout = computeRows(availableWidth: containerWidth > 0 ? containerWidth - 32 : 1000)
+        let layout = computeRows(availableWidth: containerWidth)
         
         return VStack(alignment: .leading, spacing: spacing) {
             ForEach(0..<layout.count, id: \.self) { rowIndex in
@@ -70,26 +70,34 @@ public struct Swiflow<Data: RandomAccessCollection, Content: View>: View where D
     // MARK: - Helper Methods
     
     private func computeRows(availableWidth: CGFloat) -> [[(index: Int, item: Data.Element)]] {
-        var totalWidth = CGFloat.zero
-        var rows: [[(index: Int, item: Data.Element)]] = [[]]
-        var currentRow = 0
+        var rows: [[(index: Int, item: Data.Element)]] = []
+        var currentRowWidth = CGFloat.zero
+        var currentRowItems: [(index: Int, item: Data.Element)] = []
         let itemsArray = Array(items)
-        
+    
         // Calculate rows based on item sizes
         for (index, item) in itemsArray.enumerated() {
             let itemSize = elementsSize[index, default: CGSize(width: 100, height: 30)]
-            
-            if totalWidth + itemSize.width + spacing > availableWidth && totalWidth > 0 {
-                currentRow += 1
-                rows.append([])
-                totalWidth = 0
+    
+            let spacingNeeded = currentRowItems.isEmpty ? 0 : spacing
+            let additionalWidth = spacingNeeded + itemSize.width
+    
+            if !currentRowItems.isEmpty && currentRowWidth + additionalWidth > availableWidth {
+                rows.append(currentRowItems)
+                currentRowItems = []
+                currentRowWidth = 0
             }
-            
-            rows[currentRow].append((index, item))
-            totalWidth += itemSize.width + (totalWidth > 0 ? spacing : 0)
+    
+            currentRowItems.append((index, item))
+            let actualSpacingUsed = currentRowWidth > 0 ? spacing : 0
+            currentRowWidth += actualSpacingUsed + itemSize.width
         }
-        
-        return rows
+    
+        if !currentRowItems.isEmpty {
+            rows.append(currentRowItems)
+        }
+    
+        return rows.isEmpty ? [[]] : rows
     }
 }
 
